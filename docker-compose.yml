@@ -43,7 +43,7 @@ services:
 
   python-server:
     build:
-      context: ./py-server
+      context: ./python-server
     ports:
       - "8000:8000"
     environment:
