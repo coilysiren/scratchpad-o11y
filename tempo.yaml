@@ -1,21 +1,15 @@
-auth_enabled: false
+server:
+  http_listen_port: 3200
 
-receivers:
-  otlp:
-    protocols:
-      grpc:
-      http:
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+        http:
 
-processors:
-  batch:
-
-exporters:
-  logging:
-    loglevel: debug
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [logging]
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/blocks

@@ -1,0 +1,45 @@
+# general
+.git/
+.gitignore
+.gitignore_global
+.gitignore_local
+.gitignore_local_global
+.gitignore_local_global_global
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+venv/
+ENV/
+
+# Rust
+target/
+debug/
+**/*.rs.bk
+Cargo.lock
+.cargo-ok
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
