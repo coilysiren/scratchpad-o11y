@@ -1,6 +1,8 @@
 version: '3.8'
 
 services:
+
+  # dashboard
   grafana:
     image: grafana/grafana
     ports:
@@ -14,6 +16,7 @@ services:
       - tempo
       - pyroscope
 
+  # metrics
   prometheus:
     image: prom/prometheus
     ports:
@@ -21,6 +24,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
+  # tracing
   tempo:
     image: grafana/tempo
     ports:
@@ -29,12 +33,14 @@ services:
       - ./tempo.yaml:/etc/tempo.yaml
     command: ["-config.file=/etc/tempo.yaml"]
 
+  # profiling
   pyroscope:
     image: pyroscope/pyroscope
     ports:
       - "4040:4040"
     command: server
 
+  # collector
   otel-collector:
     image: otel/opentelemetry-collector-contrib
     command: ["--config=/etc/otel/config.yaml"]

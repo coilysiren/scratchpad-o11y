@@ -2,7 +2,7 @@ import time
 
 from fastapi import FastAPI
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 import uvicorn
@@ -22,7 +22,3 @@ async def root():
     with tracer.start_as_current_span("handle_request"):
         time.sleep(0.5)
         return {"message": "Hello, World!"}
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
