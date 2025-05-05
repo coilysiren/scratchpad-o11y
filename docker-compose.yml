@@ -2,20 +2,6 @@ version: '3.8'
 
 services:
 
-  # dashboard
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    environment:
-      - GF_INSTALL_PLUGINS=pyroscope-datasource,grafana-tempo-datasource
-    depends_on:
-      - prometheus
-      - tempo
-      - pyroscope
-
   # metrics
   prometheus:
     image: prom/prometheus
@@ -40,13 +26,6 @@ services:
       - "4040:4040"
     command: server
 
-  # collector
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib
-    command: ["--config=/etc/otel/config.yaml"]
-    volumes:
-      - ./otel-collector-config.yaml:/etc/otel/config.yaml
-
   python-server:
     build:
       context: ./python-server
@@ -60,7 +39,7 @@ services:
     build:
       context: ./rust-server
     ports:
-      - "8001:8001"
+      - "8080:8080"
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - PYROSCOPE_SERVER_ADDRESS=http://pyroscope:4040

@@ -24,27 +24,35 @@ async fn hello(name: web::Path<String>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    info!("Starting application");
+
     // Initialize structured logger with INFO level
     tracing_subscriber::fmt()
         .json()
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    info!("Starting application");
-
-    let profiler = PyroscopeAgent::builder("http://localhost:4040", "myapp-profile")
+    let profiler = PyroscopeAgent::builder("http://pyroscope:4040", "rust-server")
         .backend(pprof_backend(PprofConfig::new().sample_rate(100)))
         .build()
         .unwrap();
-    profiler.start().expect("Failed to start Pyroscope profiler");
 
-    info!("Pyroscope profiler started");
+    let profiler_running = profiler.start().map_err(
+        |e| std::io::Error::new(std::io::ErrorKind::Other, e)
+    )?;
 
-    HttpServer::new(|| App::new()
+    let server = HttpServer::new(|| App::new()
         .wrap(middleware::RequestLogger)
         .service(index)
         .service(hello))
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
-        .await
+        .await;
+
+    let profiler_stopped = profiler_running.stop().map_err(
+        |e| std::io::Error::new(std::io::ErrorKind::Other, e)
+    )?;
+    profiler_stopped.shutdown();
+
+    server
 }

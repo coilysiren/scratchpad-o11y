@@ -9,7 +9,7 @@ import uvicorn
 
 # Setup OTEL Tracer
 provider = TracerProvider()
-otlp_exporter = OTLPSpanExporter(endpoint="http://otel-collector:4317", insecure=True)
+otlp_exporter = OTLPSpanExporter(endpoint="http://tempo:3200", insecure=True)
 provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
