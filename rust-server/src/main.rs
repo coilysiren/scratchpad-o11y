@@ -1,9 +1,11 @@
 mod middleware;
 
 use actix_web::{get, web, App, HttpServer, Responder,};
-use pyroscope::PyroscopeAgent;
+use pyroscope::{PyroscopeAgent, PyroscopeAgentBuilder};
 use pyroscope_pprofrs::{pprof_backend, PprofConfig};
-use tracing::info;
+use std::collections::HashMap;
+use std::time::Duration;
+use tracing::{info, error, debug, warn};
 use tracing_subscriber;
 
 // pyroscope profiling
@@ -32,14 +34,47 @@ async fn main() -> std::io::Result<()> {
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    let profiler = PyroscopeAgent::builder("http://pyroscope:4040", "rust-server")
-        .backend(pprof_backend(PprofConfig::new().sample_rate(100)))
-        .build()
-        .unwrap();
+    info!("Initializing Pyroscope profiler");
+    
+    // Define tags for better categorization
+    let mut tags = HashMap::new();
+    tags.insert("environment".to_string(), "development".to_string());
+    tags.insert("service".to_string(), "rust-server".to_string());
+    
+    // Build a more comprehensive Pyroscope configuration
+    let profiler_result = PyroscopeAgent::builder("http://pyroscope:4040", "rust-server")
+        .backend(pprof_backend(
+            PprofConfig::new()
+                .sample_rate(100)
+                .collection_delay(Duration::from_millis(0))
+        ))
+        .tags(tags)
+        .upload_timeout(Duration::from_secs(10))
+        .report_errors(true)
+        .build();
+    
+    let profiler = match profiler_result {
+        Ok(agent) => {
+            info!("Pyroscope agent built successfully");
+            agent
+        },
+        Err(e) => {
+            error!("Failed to build Pyroscope agent: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Pyroscope initialization error: {}", e)));
+        }
+    };
 
-    let profiler_running = profiler.start().map_err(
-        |e| std::io::Error::new(std::io::ErrorKind::Other, e)
-    )?;
+    info!("Starting Pyroscope profiler");
+    let profiler_running = match profiler.start() {
+        Ok(running) => {
+            info!("Pyroscope profiler started successfully");
+            running
+        },
+        Err(e) => {
+            error!("Failed to start Pyroscope profiler: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Pyroscope start error: {}", e)));
+        }
+    };
 
     let server = HttpServer::new(|| App::new()
         .wrap(middleware::RequestLogger)
@@ -49,10 +84,21 @@ async fn main() -> std::io::Result<()> {
         .run()
         .await;
 
-    let profiler_stopped = profiler_running.stop().map_err(
-        |e| std::io::Error::new(std::io::ErrorKind::Other, e)
-    )?;
+    info!("Stopping Pyroscope profiler");
+    let profiler_stopped = match profiler_running.stop() {
+        Ok(stopped) => {
+            info!("Pyroscope profiler stopped successfully");
+            stopped
+        },
+        Err(e) => {
+            error!("Failed to stop Pyroscope profiler: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Pyroscope stop error: {}", e)));
+        }
+    };
+    
+    info!("Shutting down Pyroscope profiler");
     profiler_stopped.shutdown();
+    info!("Pyroscope profiler shutdown complete");
 
     server
 }

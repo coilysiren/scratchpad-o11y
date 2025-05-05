@@ -24,7 +24,7 @@ services:
     image: pyroscope/pyroscope
     ports:
       - "4040:4040"
-    command: server
+    command: ["server", "-log-level=debug"]
 
   python-server:
     build:
